@@ -9,13 +9,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Buscar el proyecto de Android
+      - name: Preparar el proyecto (descomprime el zip si hace falta)
         id: p
         run: |
+          if [ -z "$(find . -name settings.gradle.kts | head -n 1)" ]; then
+            z=$(find . -maxdepth 1 -name '*.zip' | head -n 1)
+            if [ -z "$z" ]; then
+              echo "No hay settings.gradle.kts ni un .zip en el repo. Archivos que hay:"
+              find . -path ./.git -prune -o -type f -print | head -n 60
+              exit 1
+            fi
+            echo "Descomprimiendo $z"
+            mkdir -p proyecto
+            unzip -q "$z" -d proyecto
+          fi
           f=$(find . -name settings.gradle.kts | head -n 1)
           if [ -z "$f" ]; then
-            echo "No encontré settings.gradle.kts en el repo. Archivos que hay:"
-            find . -path ./.git -prune -o -type f -print | head -n 60
+            echo "El zip no tiene settings.gradle.kts. Contenido:"
+            find proyecto -type f | head -n 60
             exit 1
           fi
           echo "Proyecto en: $(dirname "$f")"
